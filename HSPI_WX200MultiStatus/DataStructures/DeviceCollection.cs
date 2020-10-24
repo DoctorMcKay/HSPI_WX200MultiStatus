@@ -39,6 +39,11 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 		}
 
 		public int GetNumDevicesNotSupportingLed(byte ledIndex) {
+			if (ledIndex == 255) {
+				// All LEDs. Naturally all devices support illuminating all their LEDs.
+				return 0;
+			}
+			
 			return _list.Count(device => ledIndex >= device.GetLedCount());
 		}
 
