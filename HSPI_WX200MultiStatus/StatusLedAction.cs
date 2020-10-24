@@ -161,7 +161,7 @@ namespace HSPI_WX200MultiStatus {
 			factory.WithDropDownSelectList(InputIdWhichLed, "LED (position from bottom)", ledListOptions, ledListOptions, whichLed);
 
 			if (whichLed != -1) {
-				int numUnsupportingDevices = deviceCollection.GetNumDevicesNotSupportingLed((byte) whichLed);
+				int numUnsupportingDevices = deviceCollection.GetNumDevicesNotSupportingLed((byte) (whichLed - 1));
 				if (numUnsupportingDevices > 0) {
 					factory.WithLabel(InputIdDeviceUnsupportingCountLabel, numUnsupportingDevices + " device" + (numUnsupportingDevices == 1 ? "" : "s") + " do not support the selected LED and will not be affected");
 				}
