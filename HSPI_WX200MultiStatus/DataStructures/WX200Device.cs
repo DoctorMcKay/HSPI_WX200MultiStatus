@@ -59,6 +59,11 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 				throw new Exception($"LED index {ledIndex} is out of range (max {GetLedCount()}");
 			}
 
+			if (color == WX200StatusModeColor.Off) {
+				// If we're turning the LED off, force blink to false
+				blink = false;
+			}
+
 			_statusLedStates[ledIndex] = (byte) color;
 			if (blink) {
 				_blinkMask |= (byte) (1 << ledIndex);
