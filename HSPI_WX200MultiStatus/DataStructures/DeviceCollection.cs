@@ -53,7 +53,7 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 					for (byte i = 0; i < device.GetLedCount(); i++) {
 						device.SetStatusLed(i, color, blink);
 					}
-				} else {
+				} else if (ledIndex < device.GetLedCount()) {
 					device.SetStatusLed(ledIndex, color, blink);
 				}
 			}
