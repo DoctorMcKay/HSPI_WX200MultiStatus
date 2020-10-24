@@ -38,7 +38,7 @@ namespace HSPI_WX200MultiStatus {
 			WsBlinkFrequency = byte.Parse(HomeSeerSystem.GetINISetting("Options", "ws_blink_frequency", "5", SettingsFileName));
 			List<string> blinkFreqOptions = new List<string>();
 			for (int i = 1; i <= 255; i++) {
-				blinkFreqOptions.Add((double) i / 10 + " seconds on/off");
+				blinkFreqOptions.Add((double) i / 10 + " seconds on, " + (double) i / 10 + " seconds off");
 			}
 
 			// Build the settings page
@@ -107,6 +107,7 @@ namespace HSPI_WX200MultiStatus {
 				case "ws_blink_frequency":
 					WsBlinkFrequency = (byte) (byte.Parse(changedView.GetStringValue()) + 1);
 					HomeSeerSystem.SaveINISetting("Options", "ws_blink_frequency", WsBlinkFrequency.ToString(), SettingsFileName);
+					WriteLog(ELogType.Info, $"WS200 blink frequency set to {WsBlinkFrequency}");
 					return true;
 				
 				case "debug_log":

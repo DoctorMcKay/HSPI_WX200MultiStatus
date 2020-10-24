@@ -66,11 +66,11 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 				_blinkMask &= (byte) ~(1 << ledIndex);
 			}
 			
-			_plugin.WriteLog(ELogType.Debug, $"Value for LED {ledIndex} is now {_statusLedStates[ledIndex]} with blink mask {_blinkMask}");
+			_plugin.WriteLog(ELogType.Debug, $"Value for {HomeId}:{NodeId} LED {ledIndex} is now {_statusLedStates[ledIndex]} with blink mask {_blinkMask}");
 
 			_plugin.ConfigSet(HomeId, NodeId, (byte) (WX200ConfigParam.StatusModeLed1Color + ledIndex), 1, _statusLedStates[ledIndex]);
 			if (Type == WX200DeviceType.WS200) {
-				_plugin.ConfigSet(HomeId, NodeId, (byte) WX200ConfigParam.WSStatusModeBlinkFrequency, 1, _blinkMask * _plugin.WsBlinkFrequency);
+				_plugin.ConfigSet(HomeId, NodeId, (byte) WX200ConfigParam.WSStatusModeBlinkFrequency, 1, (blink ? 1 : 0) * _plugin.WsBlinkFrequency);
 			} else {
 				_plugin.ConfigSet(HomeId, NodeId, (byte) WX200ConfigParam.WDFCStatusModeBlinkBitmask, 1, _blinkMask);
 			}
@@ -108,7 +108,12 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 			}
 
 			_isInStatusMode = _plugin.ConfigGet(HomeId, NodeId, (byte) WX200ConfigParam.StatusModeActive) == 1;
-			_blinkMask = (byte) _plugin.ConfigGet(HomeId, NodeId, (byte) WX200ConfigParam.WDFCStatusModeBlinkBitmask);
+
+			// Blink mask is not used for WS200+ so don't waste time retrieving it
+			if (Type != WX200DeviceType.WS200) {
+				_blinkMask = (byte) _plugin.ConfigGet(HomeId, NodeId, (byte) WX200ConfigParam.WDFCStatusModeBlinkBitmask);
+			}
+
 			_hasSyncedState = true;
 		}
 
