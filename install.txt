@@ -1,0 +1,2 @@
+HSPI_WX200MultiStatus.exe,.,0
+HSPI_WX200MultiStatus.exe.config,.,0

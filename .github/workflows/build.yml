@@ -1,0 +1,50 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+    
+    - name: Setup msbuild
+      uses: microsoft/setup-msbuild@v1
+      
+    - name: Setup nuget
+      uses: warrenbuckley/Setup-Nuget@v1
+      
+    - name: Nuget restore
+      run: nuget restore HSPI_WX200MultiStatus.sln
+      
+    - name: MSBuild
+      run: |
+        msbuild /p:Configuration=Debug HSPI_WX200MultiStatus.sln
+        msbuild /p:Configuration=Release HSPI_WX200MultiStatus.sln
+        
+    - name: Stage artifacts
+      run: |
+        mkdir artifacts
+        cp HSPI_WX200MultiStatus\bin\Release\HSPI_WX200MultiStatus.exe artifacts\HSPI_WX200MultiStatus.exe
+        cp HSPI_WX200MultiStatus.exe.config artifacts\HSPI_WX200MultiStatus.exe.config
+        cp install.txt artifacts\install.txt
+    
+    - name: Stage debug artifacts
+      run: |
+        mkdir artifacts-debug
+        cp HSPI_WX200MultiStatus\bin\Debug\HSPI_WX200MultiStatus.exe "artifacts-debug\HSPI_WX200MultiStatus.exe"
+        cp HSPI_WX200MultiStatus.exe.config artifacts-debug\HSPI_WX200MultiStatus.exe.config
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: Plugin
+        path: artifacts
+    
+    - name: Upload debug artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: Debug Build
+        path: artifacts-debug

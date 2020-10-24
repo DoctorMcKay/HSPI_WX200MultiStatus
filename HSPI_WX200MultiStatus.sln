@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HSPI_WX200MultiStatus", "HSPI_WX200MultiStatus\HSPI_WX200MultiStatus.csproj", "{DC9BE8E9-B209-4006-A6EA-CA4A70B554DF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DC9BE8E9-B209-4006-A6EA-CA4A70B554DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC9BE8E9-B209-4006-A6EA-CA4A70B554DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC9BE8E9-B209-4006-A6EA-CA4A70B554DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC9BE8E9-B209-4006-A6EA-CA4A70B554DF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
