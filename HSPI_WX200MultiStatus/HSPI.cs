@@ -61,12 +61,16 @@ namespace HSPI_WX200MultiStatus {
 			Status = PluginStatus.Info("Initializing...");
 
 			WriteLog(ELogType.Trace, "Enumerating HS devices to find WX200 devices");
+			string deviceList = "";
 			DateTime start = DateTime.Now;
 			foreach (HsDevice device in HomeSeerSystem.GetAllDevices(false).Where(WX200Device.IsWX200Device)) {
-				_devices.Add(new WX200Device(this, device));
+				WX200Device wxDevice = new WX200Device(this, device);
+				_devices.Add(wxDevice);
+				deviceList += (deviceList.Length > 0 ? ", " : "") + $"{wxDevice.HomeId}:{wxDevice.NodeId}";
 			}
 
-			WriteLog(ELogType.Info, $"Initialization complete in {DateTime.Now.Subtract(start).TotalMilliseconds} ms. Found {_devices.Count} WX200 devices.");
+			double time = DateTime.Now.Subtract(start).TotalMilliseconds;
+			WriteLog(ELogType.Info, $"Initialization complete in {time} ms. Found {_devices.Count} WX200 devices: {deviceList}");
 			Status = PluginStatus.Ok();
 			analytics.ReportIn(5000);
 			
