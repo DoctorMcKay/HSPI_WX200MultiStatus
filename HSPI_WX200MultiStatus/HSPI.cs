@@ -47,6 +47,7 @@ namespace HSPI_WX200MultiStatus {
 				.WithLabel("plugin_status", "Status (refresh to update)", "x")
 				.WithDropDownSelectList("ws_blink_frequency", "HS-WS200+ Blink Frequency", blinkFreqOptions, WsBlinkFrequency - 1)
 				.WithGroup("debug_group", "<hr>", new AbstractView[] {
+					new LabelView("debug_support_link", "Documentation", "<a href=\"https://github.com/DoctorMcKay/HSPI_WX200MultiStatus/blob/master/README.md\" target=\"_blank\">GitHub</a>"), 
 					new LabelView("debug_system_id", "System ID (include this with any support requests)", analytics.CustomSystemId),
 #if DEBUG
 					new LabelView("debug_log", "Enable Debug Logging", "ON - DEBUG BUILD")
