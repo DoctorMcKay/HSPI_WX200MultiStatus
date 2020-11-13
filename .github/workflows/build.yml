@@ -14,7 +14,7 @@ jobs:
       uses: microsoft/setup-msbuild@v1
       
     - name: Setup nuget
-      uses: warrenbuckley/Setup-Nuget@v1
+      uses: nuget/setup-nuget@v1
       
     - name: Nuget restore
       run: nuget restore HSPI_WX200MultiStatus.sln
