@@ -11,7 +11,7 @@ entire groups all at once.
 
 # Installation
 
-This plugin is **not yet** available in the HomeSeer plugin updater.
+This plugin is available in the HomeSeer plugin updater.
 
 # Configuration
 
