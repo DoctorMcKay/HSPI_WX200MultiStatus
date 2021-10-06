@@ -32,7 +32,6 @@ namespace HSPI_WX200MultiStatus {
 		}
 
 		protected override void OnNewAction() {
-			Console.WriteLine("NewAction");
 			ConfigPage = _initNewConfigPage().Page;
 		}
 
