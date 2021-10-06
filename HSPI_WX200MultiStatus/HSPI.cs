@@ -234,7 +234,11 @@ namespace HSPI_WX200MultiStatus {
 			foreach (WX200Device device in _devices) {
 				AbstractHsDevice hsDevice = HomeSeerSystem.GetDeviceByRef(device.DevRef);
 				string name = $"{hsDevice.Location2} {hsDevice.Location} {hsDevice.Name}";
-				output.Add(name, device);
+				int suffixNumber = 1;
+				while (output.ContainsKey(name + (suffixNumber > 1 ? $" ({suffixNumber})" : ""))) {
+					suffixNumber++;
+				}
+				output.Add(name + (suffixNumber > 1 ? $" ({suffixNumber})" : ""), device);
 			}
 
 			return output;
