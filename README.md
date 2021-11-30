@@ -1,6 +1,6 @@
-# HS-WX200/FC200 Multi-Status
+# HS-WX200/WX300/FC200 Multi-Status
 
-The RGB status LED features in HomeSeer HS-WX200/FC200 wall switches are very convenient,
+The RGB status LED features in HomeSeer HS-WX200/WX300/FC200 wall switches are very convenient,
 but if you have many of those switches installed in your home, it can be a pain to display
 various statuses across all of them using HomeSeer's native event system. It is natively
 possible to manipulate a status LED on all switches at once, but it's impossible to get
