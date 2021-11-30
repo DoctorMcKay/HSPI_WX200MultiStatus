@@ -16,7 +16,7 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 		public readonly byte NodeId;
 		public readonly List<string> Groups;
 		private readonly HSPI _plugin;
-		
+
 		private bool _hasSyncedState = false;
 		private readonly byte[] _statusLedStates;
 		private bool _isInStatusMode;
@@ -70,7 +70,7 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 			} else {
 				_blinkMask &= (byte) ~(1 << ledIndex);
 			}
-			
+
 			_plugin.WriteLog(ELogType.Debug, $"Value for {HomeId}:{NodeId} LED {ledIndex} is now {_statusLedStates[ledIndex]} with blink mask {_blinkMask}");
 
 			_plugin.ConfigSet(HomeId, NodeId, (byte) (WX200ConfigParam.StatusModeLed1Color + ledIndex), 1, _statusLedStates[ledIndex]);
@@ -91,13 +91,15 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 			switch (Type) {
 				case WX200DeviceType.WS200:
 					return 1;
-				
+
+				//Both WD200 and WX300 have 7 lights
 				case WX200DeviceType.WD200:
+				case WX200DeviceType.WX300:
 					return 7;
-				
+
 				case WX200DeviceType.FC200:
 					return 4;
-				
+
 				default:
 					throw new Exception("Unknown type");
 			}
@@ -134,7 +136,7 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 			if (hsDevice.Interface != "Z-Wave") {
 				throw new Exception("Provided device is not a Z-Wave device");
 			}
-			
+
 			int? manufacturerId = hsDevice.PlugExtraData.GetNamed<int?>("manufacturer_id");
 			ushort? prodId = hsDevice.PlugExtraData.GetNamed<ushort?>("manufacturer_prod_id");
 			ushort? prodType = hsDevice.PlugExtraData.GetNamed<ushort?>("manufacturer_prod_type");
@@ -150,6 +152,10 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 
 			if (prodId == 12342 && prodType == 17479) {
 				return WX200DeviceType.WD200;
+			}
+
+			if (prodId == 16439 && prodType == 17479) {
+				return WX200DeviceType.WX300;
 			}
 
 			if (prodId == 1 && prodType == 515) {
