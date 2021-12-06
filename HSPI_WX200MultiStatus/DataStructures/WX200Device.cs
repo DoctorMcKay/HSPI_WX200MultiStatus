@@ -22,6 +22,9 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 		private bool _isInStatusMode;
 		private byte _blinkMask;
 
+		// ReSharper disable once InconsistentNaming
+		private const int MFG_ID_HOMESEER_TECHNOLOGIES = 0x000c;
+
 		public WX200Device(HSPI plugin, AbstractHsDevice hsDevice) {
 			_plugin = plugin;
 			Groups = new List<string>();
@@ -138,27 +141,26 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 			}
 
 			int? manufacturerId = hsDevice.PlugExtraData.GetNamed<int?>("manufacturer_id");
-			ushort? prodId = hsDevice.PlugExtraData.GetNamed<ushort?>("manufacturer_prod_id");
 			ushort? prodType = hsDevice.PlugExtraData.GetNamed<ushort?>("manufacturer_prod_type");
+			ushort? prodId = hsDevice.PlugExtraData.GetNamed<ushort?>("manufacturer_prod_id");
 
-			if (manufacturerId != 12) {
-				// All HS devices have manufacturer ID 12
+			if (manufacturerId != MFG_ID_HOMESEER_TECHNOLOGIES) {
 				throw new Exception("Provided device is not a HS-WX200+");
 			}
 
-			if (prodId == 12341 && prodType == 17479) {
+			if (prodType == 0x4447 && prodId == 0x3035) {
 				return WX200DeviceType.WS200;
 			}
 
-			if (prodId == 12342 && prodType == 17479) {
+			if (prodType == 0x4447 && prodId == 0x3036) {
 				return WX200DeviceType.WD200;
 			}
 
-			if (prodId == 16439 && prodType == 17479) {
+			if (prodType == 0x4447 && prodId == 0x4037) {
 				return WX200DeviceType.WX300;
 			}
 
-			if (prodId == 1 && prodType == 515) {
+			if (prodType == 0x203 && prodId == 0x1) {
 				return WX200DeviceType.FC200;
 			}
 
