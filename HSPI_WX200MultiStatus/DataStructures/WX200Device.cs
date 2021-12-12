@@ -156,7 +156,8 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 				return WX200DeviceType.WD200;
 			}
 
-			if (prodType == 0x4447 && prodId == 0x4037) {
+			// 0x4036 = WX300 in dimmer mode; 0x4037 = WX300 in binary switch mode
+			if (prodType == 0x4447 && (prodId == 0x4036 || prodId == 0x4037)) {
 				return WX200DeviceType.WX300;
 			}
 
