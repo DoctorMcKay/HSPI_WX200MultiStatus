@@ -20,6 +20,7 @@ namespace HSPI_WX200MultiStatus {
 
 		private readonly List<WX200Device> _devices;
 		internal byte WsBlinkFrequency;
+		private ZwavePluginType _zwavePluginType = ZwavePluginType.Unknown;
 		private bool _debugLogging;
 
 		public HSPI() {
@@ -32,7 +33,7 @@ namespace HSPI_WX200MultiStatus {
 
 		protected override void Initialize() {
 			WriteLog(ELogType.Debug, "Initialize");
-			
+
 			AnalyticsClient analytics = new AnalyticsClient(this, HomeSeerSystem);
 
 			WsBlinkFrequency = byte.Parse(HomeSeerSystem.GetINISetting("Options", "ws_blink_frequency", "5", SettingsFileName));
@@ -185,7 +186,7 @@ namespace HSPI_WX200MultiStatus {
 
 		internal int ConfigGet(string homeId, byte nodeId, byte configProperty) {
 			DateTime start = DateTime.Now;
-			int result = (int) HomeSeerSystem.LegacyPluginFunction("Z-Wave", "", "Configuration_Get", new object[] {
+			int result = (int) ZWavePluginFunction("Configuration_Get", new object[] {
 				homeId,
 				nodeId,
 				configProperty
@@ -201,7 +202,7 @@ namespace HSPI_WX200MultiStatus {
 
 		internal ConfigResult ConfigSet(string homeId, byte nodeId, byte configProperty, byte valueLength, int value) {
 			DateTime start = DateTime.Now;
-			ConfigResult result = (ConfigResult) HomeSeerSystem.LegacyPluginFunction("Z-Wave", "", "Configuration_Set", new object[] {
+			ConfigResult result = (ConfigResult) ZWavePluginFunction("Configuration_Set", new object[] {
 				homeId,
 				nodeId,
 				configProperty,
@@ -215,6 +216,38 @@ namespace HSPI_WX200MultiStatus {
 			}
 			WriteLog(ELogType.Debug, $"Set {homeId}:{nodeId}:{(WX200ConfigParam) configProperty} = {value}:{valueLength} with result {result} in {ms} ms");
 			return result;
+		}
+
+		private object ZWavePluginFunction(string functionName, object[] param) {
+			if (_zwavePluginType == ZwavePluginType.Unknown) {
+				string[] pluginVersion = HomeSeerSystem.GetPluginVersionByName("Z-Wave").Split('.');
+				switch (int.Parse(pluginVersion[0])) {
+					case 3:
+						_zwavePluginType = ZwavePluginType.Legacy;
+						break;
+					
+					case 4:
+						_zwavePluginType = ZwavePluginType.HS4Native;
+						break;
+					
+					default:
+						Status = PluginStatus.Fatal("Couldn't detect Z-Wave plugin");
+						return null;
+				}
+				
+				WriteLog(ELogType.Debug, $"Detected Z-Wave plugin type: {_zwavePluginType}");
+			}
+
+			switch (_zwavePluginType) {
+				case ZwavePluginType.Legacy:
+					return HomeSeerSystem.LegacyPluginFunction("Z-Wave", "", functionName, param);
+				
+				case ZwavePluginType.HS4Native:
+					return HomeSeerSystem.PluginFunction("Z-Wave", functionName, param);
+				
+				default:
+					return null;
+			}
 		}
 
 		internal Dictionary<string, string> GetIniSection(string section) {

@@ -59,6 +59,7 @@
         <Compile Include="Enums\WX200ConfigParam.cs" />
         <Compile Include="Enums\WX200DeviceType.cs" />
         <Compile Include="Enums\WX200StatusModeColor.cs" />
+        <Compile Include="Enums\ZwavePluginType.cs" />
         <Compile Include="HSPI.cs" />
         <Compile Include="Program.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
