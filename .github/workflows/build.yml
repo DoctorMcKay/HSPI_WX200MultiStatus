@@ -1,6 +1,10 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    branches:
+      # Only run on branch push, not tag push
+      - '**'
 
 jobs:
   build:
@@ -19,6 +23,11 @@ jobs:
     - name: Nuget restore
       run: nuget restore HSPI_WX200MultiStatus.sln
       
+    - name: Generate assembly version
+      uses: DoctorMcKay/action-csharp-majoryearweekbuild-version@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
     - name: MSBuild
       run: |
         msbuild /p:Configuration=Debug HSPI_WX200MultiStatus.sln
@@ -28,23 +37,26 @@ jobs:
       run: |
         mkdir artifacts
         cp HSPI_WX200MultiStatus\bin\Release\HSPI_WX200MultiStatus.exe artifacts\HSPI_WX200MultiStatus.exe
-        cp HSPI_WX200MultiStatus.exe.config artifacts\HSPI_WX200MultiStatus.exe.config
+        cp HSPI_WX200MultiStatus\bin\Release\HSPI_WX200MultiStatus.exe.config artifacts\HSPI_WX200MultiStatus.exe.config
         cp install.txt artifacts\install.txt
+        $release_version = (Get-ChildItem -Filter "artifacts\HSPI_WX200MultiStatus.exe" | Select-Object -ExpandProperty VersionInfo).FileVersion.Replace('.', '-')
+        echo "release_version=$release_version"
+        echo "release_version=$release_version" >> $env:GITHUB_ENV
     
     - name: Stage debug artifacts
       run: |
         mkdir artifacts-debug
-        cp HSPI_WX200MultiStatus\bin\Debug\HSPI_WX200MultiStatus.exe "artifacts-debug\HSPI_WX200MultiStatus.exe"
-        cp HSPI_WX200MultiStatus.exe.config artifacts-debug\HSPI_WX200MultiStatus.exe.config
+        cp HSPI_WX200MultiStatus\bin\Debug\HSPI_WX200MultiStatus.exe artifacts-debug\HSPI_WX200MultiStatus.exe
+        cp HSPI_WX200MultiStatus\bin\Debug\HSPI_WX200MultiStatus.exe.config artifacts-debug\HSPI_WX200MultiStatus.exe.config
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
-        name: Plugin
+        name: WX200MultiStatus_${{ env.release_version }}
         path: artifacts
     
     - name: Upload debug artifacts
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
         name: Debug Build
         path: artifacts-debug
