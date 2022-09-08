@@ -76,9 +76,17 @@ namespace HSPI_WX200MultiStatus {
 			WriteLog(ELogType.Info, $"Initialization complete in {time} ms. Found {_devices.Count} WX200 devices: {deviceList}");
 			Status = PluginStatus.Ok();
 			analytics.ReportIn(5000);
+
+			#if DEBUG
+			const int timerInterval = 1000;
+			#else
+			const int timerInterval = 20000;
+			#endif
 			
-			Timer timer = new Timer(20000) {Enabled = true, AutoReset = false};
+			Timer timer = new Timer(timerInterval) {Enabled = true, AutoReset = false};
 			timer.Elapsed += async (src, arg) => {
+				timer.Dispose();
+				
 				WriteLog(ELogType.Info, "Synchronizing all WX200 device states");
 				DateTime start2 = DateTime.Now;
 				double waitTime = 0;
@@ -88,6 +96,7 @@ namespace HSPI_WX200MultiStatus {
 					waitTime += DateTime.Now.Subtract(start3).TotalMilliseconds;
 					await Task.Delay(2000);
 				}
+				
 				WriteLog(ELogType.Info, $"Device states synchronized in {DateTime.Now.Subtract(start2).TotalMilliseconds} ms ({waitTime} ms waiting)");
 			};
 		}
@@ -200,9 +209,9 @@ namespace HSPI_WX200MultiStatus {
 			return result;
 		}
 
-		internal ConfigResult ConfigSet(string homeId, byte nodeId, byte configProperty, byte valueLength, int value) {
+		internal void ConfigSet(string homeId, byte nodeId, byte configProperty, byte valueLength, int value) {
 			DateTime start = DateTime.Now;
-			ConfigResult result = (ConfigResult) ZWavePluginFunction("Configuration_Set", new object[] {
+			object result = ZWavePluginFunction("SetDeviceParameterValue", new object[] {
 				homeId,
 				nodeId,
 				configProperty,
@@ -214,8 +223,16 @@ namespace HSPI_WX200MultiStatus {
 			if (ms > 2000) {
 				WriteLog(ELogType.Warning, $"Node {homeId}:{nodeId} was very slow to respond ({ms} ms) and might need to be optimized.");
 			}
-			WriteLog(ELogType.Debug, $"Set {homeId}:{nodeId}:{(WX200ConfigParam) configProperty} = {value}:{valueLength} with result {result} in {ms} ms");
-			return result;
+
+			string printableResult = "";
+			if (_zwavePluginType == ZwavePluginType.LegacyPreSetDeviceParameterValue) {
+				ConfigResult enumResult = (ConfigResult) result;
+				printableResult = enumResult.ToString();
+			} else {
+				printableResult = (string) result;
+			}
+			
+			WriteLog(ELogType.Debug, $"Set {homeId}:{nodeId}:{(WX200ConfigParam) configProperty} = {value}:{valueLength} with result {printableResult} in {ms} ms");
 		}
 
 		private object ZWavePluginFunction(string functionName, object[] param) {
@@ -237,11 +254,35 @@ namespace HSPI_WX200MultiStatus {
 				
 				WriteLog(ELogType.Debug, $"Detected Z-Wave plugin type: {_zwavePluginType}");
 			}
+			
+			// At some point c. 3.0.9.0, a new function SetDeviceParameterValue was added which wraps Configuration_Set
+			// and returns a string value rather than an enum value. This solves issues present when unserializing
+			// a value from another assembly, especially if that other assembly doesn't live in the same directory
+			// as the executing assembly. To maintain compatibility with older Z-Wave plugin versions, we want to detect
+			// when SetDeviceParameterValue failed (via a null return value) and fall back to using Configuration_Set.
 
 			switch (_zwavePluginType) {
 				case ZwavePluginType.Legacy:
+					object result = HomeSeerSystem.LegacyPluginFunction("Z-Wave", "", functionName, param);
+					
+					if (functionName == "SetDeviceParameterValue" && result == null) {
+						_zwavePluginType = ZwavePluginType.LegacyPreSetDeviceParameterValue;
+						WriteLog(ELogType.Debug, $"Detected Z-Wave plugin type: {_zwavePluginType}");
+						return ZWavePluginFunction(functionName, param);
+					}
+
+					return result;
+
+				case ZwavePluginType.LegacyPreSetDeviceParameterValue:
+					if (functionName == "SetDeviceParameterValue") {
+						functionName = "Configuration_Set";
+					}
+
+					// I haven't actually gotten this to work, but for some reason my dev environment doesn't work with
+					// the old build of this plugin even though it works perfectly fine on my production system. So I
+					// *suppose* this should work. Anyone who has issues with this should update the Z-Wave plugin anyway.
 					return HomeSeerSystem.LegacyPluginFunction("Z-Wave", "", functionName, param);
-				
+
 				case ZwavePluginType.HS4Native:
 					return HomeSeerSystem.PluginFunction("Z-Wave", functionName, param);
 				
