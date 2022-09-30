@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using HomeSeer.PluginSdk;
 using HomeSeer.PluginSdk.Devices;
 using HomeSeer.PluginSdk.Logging;
@@ -12,6 +13,7 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 	public class WX200Device {
 		public readonly WX200DeviceType Type;
 		public readonly int DevRef;
+		public readonly string DeviceName;
 		public readonly string HomeId;
 		public readonly byte NodeId;
 		public readonly List<string> Groups;
@@ -25,12 +27,13 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 		// ReSharper disable once InconsistentNaming
 		private const int MFG_ID_HOMESEER_TECHNOLOGIES = 0x000c;
 
-		public WX200Device(HSPI plugin, AbstractHsDevice hsDevice) {
+		public WX200Device(HSPI plugin, AbstractHsDevice hsDevice, string deviceName) {
 			_plugin = plugin;
 			Groups = new List<string>();
 
 			Type = GetDeviceType(hsDevice);
 			DevRef = hsDevice.Ref;
+			DeviceName = deviceName;
 
 			string[] address = hsDevice.Address.Split('-');
 			HomeId = address[0];
@@ -56,8 +59,8 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 			}
 		}
 
-		public void SetStatusLed(byte ledIndex, WX200StatusModeColor color, bool blink) {
-			SyncState();
+		public async void SetStatusLed(byte ledIndex, WX200StatusModeColor color, bool blink) {
+			await SyncState();
 			if (ledIndex >= GetLedCount()) {
 				throw new Exception($"LED index {ledIndex} is out of range (max {GetLedCount()}");
 			}
@@ -108,23 +111,31 @@ namespace HSPI_WX200MultiStatus.DataStructures {
 			}
 		}
 
-		internal void SyncState() {
+		internal async Task SyncState() {
 			if (_hasSyncedState) {
 				return;
 			}
+			
+			_plugin.WriteLog(ELogType.Info, $"Synchronizing device state for {HomeId}:{NodeId} ({DeviceName})");
 
-			for (byte i = 0; i < GetLedCount(); i++) {
-				_statusLedStates[i] = (byte) _plugin.ConfigGet(HomeId, NodeId, (byte) (WX200ConfigParam.StatusModeLed1Color + i));
+			try {
+				for (byte i = 0; i < GetLedCount(); i++) {
+					_statusLedStates[i] = (byte) _plugin.ConfigGet(HomeId, NodeId, (byte) (WX200ConfigParam.StatusModeLed1Color + i));
+				}
+
+				_isInStatusMode = _plugin.ConfigGet(HomeId, NodeId, (byte) WX200ConfigParam.StatusModeActive) == 1;
+
+				// Blink mask is not used for WS200+ so don't waste time retrieving it
+				if (Type != WX200DeviceType.WS200) {
+					_blinkMask = (byte) _plugin.ConfigGet(HomeId, NodeId, (byte) WX200ConfigParam.WDFCStatusModeBlinkBitmask);
+				}
+				
+				_hasSyncedState = true;
+			} catch (Exception ex) {
+				_plugin.WriteLog(ELogType.Error, $"Failure while synchronizing device state for {HomeId}:{NodeId} ({DeviceName}): {ex.Message}");
+				await Task.Delay(1000);
+				await SyncState();
 			}
-
-			_isInStatusMode = _plugin.ConfigGet(HomeId, NodeId, (byte) WX200ConfigParam.StatusModeActive) == 1;
-
-			// Blink mask is not used for WS200+ so don't waste time retrieving it
-			if (Type != WX200DeviceType.WS200) {
-				_blinkMask = (byte) _plugin.ConfigGet(HomeId, NodeId, (byte) WX200ConfigParam.WDFCStatusModeBlinkBitmask);
-			}
-
-			_hasSyncedState = true;
 		}
 
 		private void _syncStatusMode() {

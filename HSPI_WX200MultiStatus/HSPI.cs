@@ -67,7 +67,11 @@ namespace HSPI_WX200MultiStatus {
 			string deviceList = "";
 			DateTime start = DateTime.Now;
 			foreach (HsDevice device in HomeSeerSystem.GetAllDevices(false).Where(WX200Device.IsWX200Device)) {
-				WX200Device wxDevice = new WX200Device(this, device);
+				string deviceName = HomeSeerSystem.IsLocation1First()
+					? $"{device.Location} {device.Location2} {device.Name}".Trim()
+					: $"{device.Location2} {device.Location} {device.Name}".Trim();
+				
+				WX200Device wxDevice = new WX200Device(this, device, deviceName);
 				_devices.Add(wxDevice);
 				deviceList += (deviceList.Length > 0 ? ", " : "") + $"{wxDevice.HomeId}:{wxDevice.NodeId}";
 			}
@@ -92,7 +96,7 @@ namespace HSPI_WX200MultiStatus {
 				double waitTime = 0;
 				foreach (WX200Device device in _devices) {
 					DateTime start3 = DateTime.Now;
-					device.SyncState();
+					await device.SyncState();
 					waitTime += DateTime.Now.Subtract(start3).TotalMilliseconds;
 					await Task.Delay(2000);
 				}
@@ -203,7 +207,8 @@ namespace HSPI_WX200MultiStatus {
 
 			double ms = DateTime.Now.Subtract(start).TotalMilliseconds;
 			if (ms > 2000) {
-				WriteLog(ELogType.Warning, $"Node {homeId}:{nodeId} was very slow to respond ({ms} ms) and might need to be optimized.");
+				double sec = Math.Round(ms / 1000, 1);
+				WriteLog(ELogType.Warning, $"Node {homeId}:{nodeId} was very slow to respond ({sec} sec) and might need to be optimized.");
 			}
 			WriteLog(ELogType.Debug, $"Retrieved {homeId}:{nodeId}:{(WX200ConfigParam) configProperty} = {result} in {ms} ms");
 			return result;
@@ -221,7 +226,8 @@ namespace HSPI_WX200MultiStatus {
 			
 			double ms = DateTime.Now.Subtract(start).TotalMilliseconds;
 			if (ms > 2000) {
-				WriteLog(ELogType.Warning, $"Node {homeId}:{nodeId} was very slow to respond ({ms} ms) and might need to be optimized.");
+				double sec = Math.Round(ms / 1000, 1);
+				WriteLog(ELogType.Warning, $"Node {homeId}:{nodeId} was very slow to respond ({sec} sec) and might need to be optimized.");
 			}
 
 			string printableResult = "";
