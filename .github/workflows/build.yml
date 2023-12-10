@@ -38,6 +38,7 @@ jobs:
         mkdir artifacts
         cp HSPI_WX200MultiStatus\bin\Release\HSPI_WX200MultiStatus.exe artifacts\HSPI_WX200MultiStatus.exe
         cp HSPI_WX200MultiStatus\bin\Release\HSPI_WX200MultiStatus.exe.config artifacts\HSPI_WX200MultiStatus.exe.config
+        cp HSPI_WX200MultiStatus\bin\Release\*.dll artifacts
         cp install.txt artifacts\install.txt
         $release_version = (Get-ChildItem -Filter "artifacts\HSPI_WX200MultiStatus.exe" | Select-Object -ExpandProperty VersionInfo).FileVersion.Replace('.', '-')
         echo "release_version=$release_version"
@@ -48,6 +49,7 @@ jobs:
         mkdir artifacts-debug
         cp HSPI_WX200MultiStatus\bin\Debug\HSPI_WX200MultiStatus.exe artifacts-debug\HSPI_WX200MultiStatus.exe
         cp HSPI_WX200MultiStatus\bin\Debug\HSPI_WX200MultiStatus.exe.config artifacts-debug\HSPI_WX200MultiStatus.exe.config
+        cp HSPI_WX200MultiStatus\bin\Debug\*.dll artifacts-debug
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
