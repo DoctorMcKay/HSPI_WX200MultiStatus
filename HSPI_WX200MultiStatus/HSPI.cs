@@ -22,6 +22,7 @@ public class HSPI : AbstractPlugin, IGetDevicesActionListener {
 	private readonly List<WX200Device> _devices;
 	private readonly Dictionary<Tuple<string, byte, byte>, int> _zwaveConfigCache = new Dictionary<Tuple<string, byte, byte>, int>();
 	internal byte WsBlinkFrequency;
+	private bool _enableConfigCache = true;
 	private ZwavePluginType _zwavePluginType = ZwavePluginType.Unknown;
 	private bool _debugLogging;
 
@@ -41,16 +42,24 @@ public class HSPI : AbstractPlugin, IGetDevicesActionListener {
 		_analyticsClient = new AnalyticsClient(this, HomeSeerSystem);
 
 		WsBlinkFrequency = byte.Parse(HomeSeerSystem.GetINISetting("Options", "ws_blink_frequency", "5", SettingsFileName));
+		_enableConfigCache = HomeSeerSystem.GetINISetting("Options", "zwave_config_cache", "1", SettingsFileName) != "0";
+		
 		List<string> blinkFreqOptions = new List<string>();
 		for (int i = 1; i <= 255; i++) {
 			blinkFreqOptions.Add((double) i / 10 + " seconds on, " + (double) i / 10 + " seconds off");
 		}
+
+		List<string> configCacheOptions = new List<string> {
+			"Enabled",
+			"Disabled (will hurt performance, but fixes some issues if you control status mode LEDs outside of this plugin's event action)"
+		};
 
 		// Build the settings page
 		PageFactory settingsPageFactory = PageFactory
 			.CreateSettingsPage("WX200MultiStatusSettings", "WX200 Multi Status Settings")
 			.WithLabel("plugin_status", "Status (refresh to update)", "x")
 			.WithDropDownSelectList("ws_blink_frequency", "HS-WS200+ Blink Frequency", blinkFreqOptions, WsBlinkFrequency - 1)
+			.WithDropDownSelectList("zwave_config_cache", "Z-Wave Config Cache", configCacheOptions, _enableConfigCache ? 0 : 1)
 			.WithGroup("debug_group", "<hr>", new AbstractView[] {
 				new LabelView("debug_support_link", "Documentation", "<a href=\"https://github.com/DoctorMcKay/HSPI_WX200MultiStatus/blob/master/README.md\" target=\"_blank\">GitHub</a>"), 
 				new LabelView("debug_donate_link", "Fund Future Development", "This plugin is and always will be free.<br /><a href=\"https://github.com/sponsors/DoctorMcKay\" target=\"_blank\">Please consider donating to fund future development.</a>"),
@@ -117,6 +126,7 @@ public class HSPI : AbstractPlugin, IGetDevicesActionListener {
 		}
 		((LabelView) Settings.Pages[0].GetViewById("plugin_status")).Value = statusText;
 		((SelectListView) Settings.Pages[0].GetViewById("ws_blink_frequency")).Selection = WsBlinkFrequency - 1;
+		((SelectListView) Settings.Pages[0].GetViewById("zwave_config_cache")).Selection = _enableConfigCache ? 0 : 1;
 	}
 		
 	protected override bool OnSettingChange(string pageId, AbstractView currentView, AbstractView changedView) {
@@ -132,6 +142,12 @@ public class HSPI : AbstractPlugin, IGetDevicesActionListener {
 				WsBlinkFrequency = (byte) (byte.Parse(changedView.GetStringValue()) + 1);
 				HomeSeerSystem.SaveINISetting("Options", "ws_blink_frequency", WsBlinkFrequency.ToString(), SettingsFileName);
 				WriteLog(ELogType.Info, $"WS200 blink frequency set to {WsBlinkFrequency}");
+				return true;
+			
+			case "zwave_config_cache":
+				_enableConfigCache = ((SelectListView) changedView).Selection != 1;
+				HomeSeerSystem.SaveINISetting("Options", "zwave_config_cache", _enableConfigCache ? "1" : "0", SettingsFileName);
+				WriteLog(ELogType.Info, $"Z-Wave config cache set to {_enableConfigCache}");
 				return true;
 				
 			case "debug_log":
@@ -225,7 +241,7 @@ public class HSPI : AbstractPlugin, IGetDevicesActionListener {
 
 	internal void ConfigSet(string homeId, byte nodeId, byte configProperty, byte valueLength, int value) {
 		Tuple<string, byte, byte> cacheKey = Tuple.Create(homeId, nodeId, configProperty);
-		if (_zwaveConfigCache.ContainsKey(cacheKey) && _zwaveConfigCache[cacheKey] == value) {
+		if (_enableConfigCache && _zwaveConfigCache.ContainsKey(cacheKey) && _zwaveConfigCache[cacheKey] == value) {
 			WriteLog(ELogType.Debug, $"Skipping ConfigSet for {homeId}:{nodeId}:{(WX200ConfigParam) configProperty} = {value} because our cache indicates it's already that value");
 			return;
 		}
