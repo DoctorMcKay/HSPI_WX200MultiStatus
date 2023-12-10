@@ -25,6 +25,8 @@ public class HSPI : AbstractPlugin, IGetDevicesActionListener {
 	private ZwavePluginType _zwavePluginType = ZwavePluginType.Unknown;
 	private bool _debugLogging;
 
+	private AnalyticsClient _analyticsClient;
+
 	public HSPI() {
 		_devices = new List<WX200Device>();
 
@@ -36,7 +38,7 @@ public class HSPI : AbstractPlugin, IGetDevicesActionListener {
 	protected override void Initialize() {
 		WriteLog(ELogType.Debug, "Initialize");
 
-		AnalyticsClient analytics = new AnalyticsClient(this, HomeSeerSystem);
+		_analyticsClient = new AnalyticsClient(this, HomeSeerSystem);
 
 		WsBlinkFrequency = byte.Parse(HomeSeerSystem.GetINISetting("Options", "ws_blink_frequency", "5", SettingsFileName));
 		List<string> blinkFreqOptions = new List<string>();
@@ -52,7 +54,7 @@ public class HSPI : AbstractPlugin, IGetDevicesActionListener {
 			.WithGroup("debug_group", "<hr>", new AbstractView[] {
 				new LabelView("debug_support_link", "Documentation", "<a href=\"https://github.com/DoctorMcKay/HSPI_WX200MultiStatus/blob/master/README.md\" target=\"_blank\">GitHub</a>"), 
 				new LabelView("debug_donate_link", "Fund Future Development", "This plugin is and always will be free.<br /><a href=\"https://github.com/sponsors/DoctorMcKay\" target=\"_blank\">Please consider donating to fund future development.</a>"),
-				new LabelView("debug_system_id", "System ID (include this with any support requests)", analytics.CustomSystemId),
+				new LabelView("debug_system_id", "System ID (include this with any support requests)", _analyticsClient.CustomSystemId),
 				#if DEBUG
 				new LabelView("debug_log", "Enable Debug Logging", "ON - DEBUG BUILD")
 				#else
@@ -81,7 +83,7 @@ public class HSPI : AbstractPlugin, IGetDevicesActionListener {
 		double time = DateTime.Now.Subtract(start).TotalMilliseconds;
 		WriteLog(ELogType.Info, $"Initialization complete in {time} ms. Found {_devices.Count} WX200 devices: {deviceList}");
 		Status = PluginStatus.Ok();
-		analytics.ReportIn(5000);
+		_analyticsClient.ReportIn(5000);
 
 		#if DEBUG
 		const int timerInterval = 1000;
@@ -374,6 +376,8 @@ public class HSPI : AbstractPlugin, IGetDevicesActionListener {
 	protected override void BeforeReturnStatus() { }
 		
 	public void WriteLog(ELogType logType, string message, [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string caller = null) {
+		_analyticsClient?.WriteLog(logType, message, lineNumber, caller);
+		
 		#if DEBUG
 		bool isDebugMode = true;
 
