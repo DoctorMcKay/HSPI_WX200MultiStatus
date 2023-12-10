@@ -254,6 +254,10 @@ public class HSPI : AbstractPlugin, IGetDevicesActionListener {
 		}
 			
 		WriteLog(ELogType.Debug, $"Set {homeId}:{nodeId}:{(WX200ConfigParam) configProperty} = {value}:{valueLength} with result {printableResult} in {ms} ms");
+
+		if (printableResult == "Success") {
+			_zwaveConfigCache[cacheKey] = value;
+		}
 	}
 
 	private object ZWavePluginFunction(string functionName, object[] param) {
