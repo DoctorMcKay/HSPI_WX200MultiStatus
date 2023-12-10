@@ -19,6 +19,7 @@ namespace HSPI_WX200MultiStatus {
 		public override bool SupportsConfigDeviceAll { get; } = true;
 
 		private readonly List<WX200Device> _devices;
+		private readonly Dictionary<Tuple<string, byte, byte>, int> _zwaveConfigCache = new Dictionary<Tuple<string, byte, byte>, int>();
 		internal byte WsBlinkFrequency;
 		private ZwavePluginType _zwavePluginType = ZwavePluginType.Unknown;
 		private bool _debugLogging;
@@ -211,10 +212,21 @@ namespace HSPI_WX200MultiStatus {
 				WriteLog(ELogType.Warning, $"Node {homeId}:{nodeId} was very slow to respond ({sec} sec) and might need to be optimized.");
 			}
 			WriteLog(ELogType.Debug, $"Retrieved {homeId}:{nodeId}:{(WX200ConfigParam) configProperty} = {result} in {ms} ms");
+			
+			// Cache this result
+			Tuple<string, byte, byte> cacheKey = Tuple.Create(homeId, nodeId, configProperty);
+			_zwaveConfigCache[cacheKey] = result;
+			
 			return result;
 		}
 
 		internal void ConfigSet(string homeId, byte nodeId, byte configProperty, byte valueLength, int value) {
+			Tuple<string, byte, byte> cacheKey = Tuple.Create(homeId, nodeId, configProperty);
+			if (_zwaveConfigCache.ContainsKey(cacheKey) && _zwaveConfigCache[cacheKey] == value) {
+				WriteLog(ELogType.Debug, $"Skipping ConfigSet for {homeId}:{nodeId}:{(WX200ConfigParam) configProperty} = {value} because our cache indicates it's already that value");
+				return;
+			}
+			
 			DateTime start = DateTime.Now;
 			object result = ZWavePluginFunction("SetDeviceParameterValue", new object[] {
 				homeId,
