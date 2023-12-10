@@ -1,2 +1,5 @@
 HSPI_WX200MultiStatus.exe,.,0
 HSPI_WX200MultiStatus.exe.config,.,0
+HSCF.dll,.\bin\WX200MultiStatus,0
+Newtonsoft.Json.dll,.\bin\WX200MultiStatus,0
+PluginSdk.dll,.\bin\WX200MultiStatus,0
